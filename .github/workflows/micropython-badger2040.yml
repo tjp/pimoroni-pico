@@ -89,11 +89,28 @@ jobs:
         ../../../pimoroni-pico-${GITHUB_SHA}/micropython/_board/board-fixup.sh badger2040 ${{env.BOARD_TYPE}} ../../../pimoroni-pico-${GITHUB_SHA}/micropython/_board
 
     # Linux deps
-    - name: Install Compiler & CCache
+    - name: Install CCache
       if: runner.os == 'Linux'
       run: |
-        sudo apt update && sudo apt install ccache gcc-arm-none-eabi
+        sudo apt update && sudo apt install ccache
         python3 -m pip install pillow
+
+    - name: Download Toolchain
+      id: download-artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        workflow_conclusion: success
+        branch: main
+        repo: gadgetoid/arm-gnu-toolchain-build
+        if_no_artifact_found: fail
+
+    - name: Unpack Toolchain & Add to PATH
+      run: |
+        tar xf */gcc-*.tar.bz2 -C .
+        cd gcc*/bin
+        pwd >> $GITHUB_PATH
 
     # Build without BadgerOS
     - name: Configure MicroPython (No BadgerOS)
