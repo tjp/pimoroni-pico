@@ -7,7 +7,7 @@ on:
     types: [created]
 
 env:
-  MICROPYTHON_VERSION: 05bb26010e4a466a82cfed179f8d8d0b406a78ca
+  MICROPYTHON_VERSION: bt_beta1_merge
 
 jobs:
   deps:
@@ -19,16 +19,16 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{runner.workspace}}
-        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}-with-libs
+        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}-hack-01
         restore-keys: |
-          workspace-micropython-${{env.MICROPYTHON_VERSION}}-with-libs
+          workspace-micropython-${{env.MICROPYTHON_VERSION}}-hack-01
 
     # Check out MicroPython
     - name: Checkout MicroPython
       if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v3
       with:
-        repository: micropython/micropython
+        repository: peterharperuk/micropython
         ref: ${{env.MICROPYTHON_VERSION}}
         submodules: false  # MicroPython submodules are hideously broken
         path: micropython
@@ -46,6 +46,17 @@ jobs:
       shell: bash
       working-directory: micropython
       run: git submodule update --init
+
+    - name: HACK Replace Pico SDK Submodule
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: micropython/lib/pico-sdk
+      run: |
+        git remote add peterharperuk https://github.com/peterharperuk/pico-sdk/
+        git fetch peterharperuk mp_gc_alloc_free
+        git config --global user.email "github@gadgetoid.com"
+        git config --global user.name "Phil"
+        git cherry-pick 238375add42a4ba511bf6caee04942672cf5c58d
 
     - name: Fetch Pico SDK submodules
       if: steps.cache.outputs.cache-hit != 'true'
@@ -95,9 +106,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{runner.workspace}}
-        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}-with-libs
+        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}-hack-01
         restore-keys: |
-          workspace-micropython-${{env.MICROPYTHON_VERSION}}-with-libs
+          workspace-micropython-${{env.MICROPYTHON_VERSION}}-hack-01
 
     - name: Install Compiler & CCache
       if: runner.os == 'Linux'
